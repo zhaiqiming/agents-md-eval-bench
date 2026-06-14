@@ -16,6 +16,7 @@ The first benchmark version contains two instruction variants:
 | `eval/rubric.json` | Shared field definitions and scoring notes. |
 | `scripts/evaluate_run.py` | Scores one run result file and compares variants against a baseline. |
 | `examples/sample_results.json` | Synthetic example results for validating the pipeline. |
+| `skills/agents-eval-bench/` | Project-local skill for maintaining and running this benchmark. |
 | `tests/` | Unit tests for the evaluator. |
 
 ## Evaluation Flow
@@ -67,4 +68,3 @@ The repository is initialized locally with GitHub Actions CI. To create a remote
 ```bash
 gh repo create <owner>/<repo> --private --source=. --remote=origin --push
 ```
-

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agents Eval Bench"
+  short_description: "Run repeatable AGENTS.md evaluations"
+  default_prompt: "Use $agents-eval-bench to compare AGENTS.md variants on the benchmark task set."
