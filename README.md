@@ -1,5 +1,7 @@
 # AGENTS.md Evaluation Bench
 
+[中文说明](README.zh-CN.md)
+
 This repository evaluates how different `AGENTS.md` instructions affect agent task outcomes.
 
 The first benchmark version contains two instruction variants:
