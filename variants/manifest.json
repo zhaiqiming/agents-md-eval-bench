@@ -1,0 +1,19 @@
+{
+  "variants": [
+    {
+      "id": "engineering_behavior",
+      "name": "Engineering Behavior",
+      "path": "variants/engineering_behavior/AGENTS.md",
+      "language": "en",
+      "hypothesis": "Improves narrow implementation quality, reviewability, and validation repeatability."
+    },
+    {
+      "id": "context_first_cn",
+      "name": "Context First CN",
+      "path": "variants/context_first_cn/AGENTS.md",
+      "language": "zh-CN",
+      "hypothesis": "Improves context gathering, evidence-based analysis, documentation quality, and verification reporting."
+    }
+  ]
+}
+

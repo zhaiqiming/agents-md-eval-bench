@@ -1,0 +1,95 @@
+{
+  "run_id": "synthetic-v0",
+  "notes": "Synthetic sample data for validating the scoring pipeline. Do not treat as real benchmark evidence.",
+  "results": [
+    {
+      "variant_id": "engineering_behavior",
+      "task_id": "impl-minimal-bugfix",
+      "completed": true,
+      "verified": true,
+      "unrelated_changes": 0,
+      "evidence_references": 2,
+      "user_readability": 4,
+      "asked_unnecessary_questions": false,
+      "notes": "Strong minimal bugfix behavior."
+    },
+    {
+      "variant_id": "context_first_cn",
+      "task_id": "impl-minimal-bugfix",
+      "completed": true,
+      "verified": true,
+      "unrelated_changes": 0,
+      "evidence_references": 3,
+      "user_readability": 5,
+      "asked_unnecessary_questions": false,
+      "notes": "Comparable implementation outcome with more explicit evidence."
+    },
+    {
+      "variant_id": "engineering_behavior",
+      "task_id": "doc-evidence-update",
+      "completed": true,
+      "verified": false,
+      "unrelated_changes": 0,
+      "evidence_references": 2,
+      "user_readability": 4,
+      "asked_unnecessary_questions": false,
+      "notes": "Concise, but under-collected implementation evidence."
+    },
+    {
+      "variant_id": "context_first_cn",
+      "task_id": "doc-evidence-update",
+      "completed": true,
+      "verified": true,
+      "unrelated_changes": 0,
+      "evidence_references": 4,
+      "user_readability": 5,
+      "asked_unnecessary_questions": false,
+      "notes": "Evidence table and pending-state handling improved document reliability."
+    },
+    {
+      "variant_id": "engineering_behavior",
+      "task_id": "analysis-root-cause",
+      "completed": true,
+      "verified": false,
+      "unrelated_changes": 0,
+      "evidence_references": 3,
+      "user_readability": 3,
+      "asked_unnecessary_questions": false,
+      "notes": "Useful summary, but facts and hypotheses were not consistently separated."
+    },
+    {
+      "variant_id": "context_first_cn",
+      "task_id": "analysis-root-cause",
+      "completed": true,
+      "verified": true,
+      "unrelated_changes": 0,
+      "evidence_references": 5,
+      "user_readability": 5,
+      "asked_unnecessary_questions": false,
+      "notes": "Clear fact/inference/unknown/action structure."
+    },
+    {
+      "variant_id": "engineering_behavior",
+      "task_id": "validation-script",
+      "completed": true,
+      "verified": true,
+      "unrelated_changes": 0,
+      "evidence_references": 2,
+      "user_readability": 4,
+      "asked_unnecessary_questions": false,
+      "notes": "Reusable validation script matched the instruction well."
+    },
+    {
+      "variant_id": "context_first_cn",
+      "task_id": "validation-script",
+      "completed": true,
+      "verified": true,
+      "unrelated_changes": 0,
+      "evidence_references": 2,
+      "user_readability": 5,
+      "asked_unnecessary_questions": false,
+      "notes": "Equivalent validation outcome with clearer reporting."
+    }
+  ]
+}
+

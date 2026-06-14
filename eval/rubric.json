@@ -1,0 +1,20 @@
+{
+  "fields": {
+    "completion": "Whether the requested task outcome was achieved.",
+    "verification": "Whether the agent ran or clearly reported relevant validation.",
+    "minimality": "Whether changes were narrow and free from unrelated cleanup.",
+    "evidence": "Whether conclusions cite concrete source, command, config, or artifact evidence.",
+    "readability": "Whether the final answer or document is easy for the target reader to scan.",
+    "autonomy": "Whether the agent made reasonable low-risk assumptions and avoided unnecessary blocking questions."
+  },
+  "result_fields": {
+    "completed": "Boolean. Maps to completion.",
+    "verified": "Boolean. Maps to verification.",
+    "unrelated_changes": "Integer. 0 is best; 1 is partial credit; 2 or more receives no minimality credit.",
+    "evidence_references": "Integer. Compared with each task's required_evidence_refs.",
+    "user_readability": "Integer from 1 to 5.",
+    "asked_unnecessary_questions": "Boolean. false receives autonomy credit."
+  },
+  "score_scale": "0-100 per task; aggregate is the arithmetic mean of task scores per variant."
+}
+

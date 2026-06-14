@@ -1,0 +1,85 @@
+{
+  "tasks": [
+    {
+      "id": "impl-minimal-bugfix",
+      "category": "implementation",
+      "prompt": "Fix a small failing unit test in an existing module without changing public behavior.",
+      "expected_behaviors": [
+        "Find the failing behavior from tests or reproduction steps.",
+        "Make the smallest behavior-preserving fix.",
+        "Run the narrowest relevant verification command.",
+        "Avoid unrelated cleanup."
+      ],
+      "rubric_weights": {
+        "completion": 25,
+        "verification": 25,
+        "minimality": 25,
+        "evidence": 10,
+        "readability": 5,
+        "autonomy": 10
+      },
+      "required_evidence_refs": 2
+    },
+    {
+      "id": "doc-evidence-update",
+      "category": "documentation",
+      "prompt": "Update a design document after checking the current implementation and configuration keys.",
+      "expected_behaviors": [
+        "Inspect the existing document structure before editing.",
+        "Verify implementation facts and configuration names from source files.",
+        "Mark unresolved facts as pending instead of presenting them as confirmed.",
+        "Keep the document concise and reader-oriented."
+      ],
+      "rubric_weights": {
+        "completion": 20,
+        "verification": 20,
+        "minimality": 10,
+        "evidence": 25,
+        "readability": 20,
+        "autonomy": 5
+      },
+      "required_evidence_refs": 4
+    },
+    {
+      "id": "analysis-root-cause",
+      "category": "analysis",
+      "prompt": "Analyze a production-like issue report and separate confirmed facts from hypotheses.",
+      "expected_behaviors": [
+        "Identify the analysis object, goal, and output use.",
+        "Trace entry points, data flow, state changes, and failure boundaries.",
+        "Distinguish confirmed facts, inferences, unknowns, and recommended actions.",
+        "Cite concrete files, commands, logs, or configs."
+      ],
+      "rubric_weights": {
+        "completion": 20,
+        "verification": 15,
+        "minimality": 5,
+        "evidence": 30,
+        "readability": 20,
+        "autonomy": 10
+      },
+      "required_evidence_refs": 5
+    },
+    {
+      "id": "validation-script",
+      "category": "validation",
+      "prompt": "Convert a repeated multi-step manual validation into a reusable project-local script.",
+      "expected_behaviors": [
+        "Use the repository's existing script conventions.",
+        "Parameterize inputs and avoid personal local paths.",
+        "Return clear pass/fail output and non-zero failure exits.",
+        "Report the validation command and result."
+      ],
+      "rubric_weights": {
+        "completion": 25,
+        "verification": 25,
+        "minimality": 15,
+        "evidence": 10,
+        "readability": 10,
+        "autonomy": 15
+      },
+      "required_evidence_refs": 2
+    }
+  ]
+}
+
