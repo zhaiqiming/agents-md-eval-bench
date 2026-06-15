@@ -1,0 +1,4 @@
+interface:
+  display_name: "Runtime Debug/Test"
+  short_description: "Runtime verification with project lessons"
+  default_prompt: "Use $runtime-debug-test to build a runtime verification plan for this service."
