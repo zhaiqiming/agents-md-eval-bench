@@ -72,6 +72,7 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 ## Non-Goals
 
 - [FORBIDDEN] Do not include secrets, tokens, personal credentials, or local-only private state.
+- [FORBIDDEN] Do not include generated-by notes, local filesystem paths, Git revision audit notes, generation timestamps, or Codex auto-read/discovery status in the file body.
 - [FORBIDDEN] Do not include unverified guesses about repository behavior.
 - [FORBIDDEN] Do not turn this file into a full README, architecture document, deployment guide, or exhaustive file inventory.
 ```
@@ -79,6 +80,7 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 ## Authoring Notes
 
 - Include repository structure in concrete project `AGENTS.md` files, but keep it concise and decision-useful.
+- Start generated files directly with `# AGENTS.md` or the first useful project heading; put generation notes in the final chat response, not in the file.
 - Do not include repository structure in generic workspace templates.
 - Prefer a compact tree for repository structure when it improves scanability.
 - Put likely-changing derived facts inside `AGENTS-MAINTAIN` blocks.

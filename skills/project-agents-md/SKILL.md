@@ -11,7 +11,7 @@ Use this skill to produce project-level Codex guidance from verified repository 
 
 1. Confirm scope and discovery.
    - Identify the target directory and Git root with non-mutating inspection.
-   - Explain whether the target `AGENTS.md` will be auto-read by Codex. Codex usually reads files from the Git root toward the current directory; a workspace parent outside the Git root may not be loaded for child repositories.
+   - Explain in chat or the final report whether the target `AGENTS.md` will be auto-read by Codex. Do not write this discovery note into the generated file. Codex usually reads files from the Git root toward the current directory; a workspace parent outside the Git root may not be loaded for child repositories.
    - If the user asks for a global personal file, stop using this skill unless they explicitly want global guidance.
 
 2. Inspect existing guidance.
@@ -25,6 +25,7 @@ Use this skill to produce project-level Codex guidance from verified repository 
 
 4. Generate project-level guidance.
    - Prefer the structure in `references/project-agents-template.md`.
+   - Start the file directly with `# AGENTS.md` or the first useful project heading. Do not add generated-by, verified-at-revision, filesystem path, auto-read, or audit-note prefaces.
    - Use rule labels when helpful:
      - `[MUST]` for required behavior.
      - `[FORBIDDEN]` for prohibited behavior.
@@ -45,6 +46,8 @@ Use this skill to produce project-level Codex guidance from verified repository 
 ### Project Overview
 
 Include a one-paragraph summary only when verified from the repository. Mention major languages and frameworks. Avoid marketing copy and unverified product claims.
+
+Do not begin the file with blockquotes or metadata such as local filesystem paths, Git revisions, generation timestamps, or Codex discovery status. Put that information in the assistant's final response when useful.
 
 ### Repository Map
 
@@ -98,7 +101,7 @@ Add maintenance rules when the file contains repository facts that will drift.
 
 ### Non-Goals
 
-Do not include secrets, tokens, personal credentials, temporary local state, long business explanations, overly detailed file lists, or unverified guesses. Do not duplicate extensive README content.
+Do not include secrets, tokens, personal credentials, temporary local state, local filesystem paths, Git revision audit notes, generated-by notes, Codex auto-read notes, long business explanations, overly detailed file lists, or unverified guesses. Do not duplicate extensive README content.
 
 ## Reference
 
