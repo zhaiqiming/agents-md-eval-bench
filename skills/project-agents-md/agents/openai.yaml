@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project AGENTS.md"
+  short_description: "Create project-level Codex guidance"
+  default_prompt: "Use $project-agents-md to create or update this repository's AGENTS.md."
