@@ -2,7 +2,7 @@
 
 Use this as a skeleton. Replace bracketed text with verified repository facts. Delete sections that are not useful for the repository.
 
-```md
+````md
 # AGENTS.md
 
 ## Project Overview
@@ -20,12 +20,41 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 ```
 <!-- AGENTS-MAINTAIN:END repository-map -->
 
+## Architecture / Runtime Facts
+
+<!-- AGENTS-MAINTAIN:BEGIN architecture-runtime -->
+[Optional. Delete this section when the repository does not prove useful runtime facts.]
+
+| Surface | Verified fact | Source |
+| --- | --- | --- |
+| Entry point | `[command, package, service, job, or binary]` | `[tracked file or script]` |
+| API / route / task | `[route, handler, queue, cron, CLI command, or package boundary]` | `[tracked file or script]` |
+<!-- AGENTS-MAINTAIN:END architecture-runtime -->
+
+## Build & Commands
+
+<!-- AGENTS-MAINTAIN:BEGIN build-commands -->
+| Purpose | Command | Source |
+| --- | --- | --- |
+| Build | `[project-provided build command]` | `[Makefile/package script/CI/docs]` |
+| Run locally | `[project-provided run command]` | `[Makefile/package script/CI/docs]` |
+| Generate code | `[project-provided generation command, if any]` | `[Makefile/package script/CI/docs]` |
+<!-- AGENTS-MAINTAIN:END build-commands -->
+
 ## Development Standards
 
 - [MUST] Follow the repository's existing style, ownership boundaries, and project-level conventions.
 - [MUST] Do not hand-edit generated code. Regenerate it through the documented command when the repository provides one.
 - [MUST] Keep public APIs, schemas, data formats, migrations, and compatibility behavior stable unless the task explicitly changes them.
 - [RECOMMENDED] Point complex project-specific procedures to existing scripts, docs, or skills instead of embedding long SOPs here.
+
+## Testing
+
+<!-- AGENTS-MAINTAIN:BEGIN testing -->
+- [MUST] Prefer project-provided test commands from Makefiles, package scripts, CI scripts, or documented commands.
+- [MUST] Keep tests aligned with the repository's existing layout, fixtures, mocks, and naming conventions.
+- [RECOMMENDED] If the repository has no verified test entrypoint, state that the test command is not confirmed instead of inventing one.
+<!-- AGENTS-MAINTAIN:END testing -->
 
 ## Branch Naming
 
@@ -55,6 +84,22 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 - [MUST] Keep validation scripts parameterized, reproducible, and clear about pass/fail; they should exit non-zero on failure.
 <!-- AGENTS-MAINTAIN:END validation-scripts -->
 
+## Security
+
+<!-- AGENTS-MAINTAIN:BEGIN security -->
+- [MUST] Do not commit secrets, tokens, personal credentials, or local private config.
+- [MUST] Preserve verified authentication, authorization, input validation, and sensitive logging boundaries.
+- [RECOMMENDED] Add project-specific security rules only when they are verified from repository code or docs.
+<!-- AGENTS-MAINTAIN:END security -->
+
+## Configuration
+
+<!-- AGENTS-MAINTAIN:BEGIN configuration -->
+- [MUST] Follow verified configuration sources such as tracked config files, config samples, environment variable docs, feature flag definitions, or deployment manifests.
+- [MUST] Do not hardcode local paths, secrets, personal environment values, or deployment-specific values unless the repository already defines them as fixtures.
+- [RECOMMENDED] Mark required-but-unconfirmed config as TODO instead of guessing values.
+<!-- AGENTS-MAINTAIN:END configuration -->
+
 ## Agent Review
 
 - [MUST] Keep `/review` and Coco separate from language static checks.
@@ -75,7 +120,7 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 - [FORBIDDEN] Do not include generated-by notes, local filesystem paths, Git revision audit notes, generation timestamps, or Codex auto-read/discovery status in the file body.
 - [FORBIDDEN] Do not include unverified guesses about repository behavior.
 - [FORBIDDEN] Do not turn this file into a full README, architecture document, deployment guide, or exhaustive file inventory.
-```
+````
 
 ## Authoring Notes
 
@@ -83,6 +128,8 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 - Start generated files directly with `# AGENTS.md` or the first useful project heading; put generation notes in the final chat response, not in the file.
 - Do not include repository structure in generic workspace templates.
 - Prefer a compact tree for repository structure when it improves scanability.
-- Put likely-changing derived facts inside `AGENTS-MAINTAIN` blocks.
+- Put likely-changing derived facts inside `AGENTS-MAINTAIN` blocks, especially repository map, architecture/runtime facts, build commands, testing, static checks, configuration, security, and validation scripts.
+- Keep stable policy sections outside managed blocks unless the project already owns them as drift-prone facts.
+- Prefer tracked sources over local state. `.git/`, local hooks, editor settings, personal config, and untracked files may guide investigation, but do not write them as project rules unless tracked docs or configuration confirm them.
 - Prefer `[MUST]`, `[FORBIDDEN]`, and `[RECOMMENDED]` labels when the strength of a rule matters.
 - Let existing project instructions override this template when they are more specific.

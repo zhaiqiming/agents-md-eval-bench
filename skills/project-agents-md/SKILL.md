@@ -19,7 +19,10 @@ Use this skill to produce project-level Codex guidance from verified repository 
    - If `AGENTS.md` already exists, merge or revise it. Do not overwrite it blindly.
 
 3. Gather repository facts.
-   - Identify language stack, frameworks, build systems, test entrypoints, static checks, local CI gates, generated-code boundaries, configuration sources, migration paths, high-risk change areas, and key repository structure.
+   - Prefer tracked sources: README files, language manifests, Makefiles, package scripts, CI configs, `scripts/`, source entrypoints, API or IDL definitions, migrations, config samples, and deployment or packaging files.
+   - Treat `.git/`, local hooks, editor settings, personal config, and untracked files as clues only. Do not write them as project rules unless tracked documentation or configuration confirms they are part of the repository workflow.
+   - Identify language stack, frameworks, build systems, runnable commands, test entrypoints, static checks, local CI gates, generated-code boundaries, configuration sources, migration paths, high-risk change areas, and key repository structure.
+   - Separate facts into repository facts, executable commands, project constraints, and TODOs or questions before drafting.
    - Include only verified facts that change how an agent should work in the repo.
    - Omit unconfirmed guesses. If a fact matters but cannot be verified, mark it as a short TODO or ask the user before writing.
 
@@ -33,6 +36,7 @@ Use this skill to produce project-level Codex guidance from verified repository 
    - Point long SOPs to existing project skills, scripts, or docs instead of copying lengthy procedures into `AGENTS.md`.
    - Prefer a compact tree for `Repository Map` or `Architecture` sections when it improves scanability. Keep it decision-useful, usually no deeper than 2-3 levels.
    - Use `AGENTS-MAINTAIN` blocks for derived or likely-changing repository facts so future agents can update them without rewriting stable policy sections.
+   - Put stable policy sections outside `AGENTS-MAINTAIN` blocks. Use managed blocks for derived sections such as repository map, architecture/runtime facts, build commands, testing, static checks, configuration, security, and validation scripts.
 
 5. Validate the result.
    - Check that project structure and workflows are concise, verified, and decision-useful.
@@ -53,9 +57,21 @@ Do not begin the file with blockquotes or metadata such as local filesystem path
 
 Include only directories that affect future code changes. Useful entries include source roots, API definitions, generated code, migrations, scripts, tests, config, and deployment or packaging folders. Prefer a compact tree when it is easier to scan than bullets. Avoid exhaustive file lists.
 
+### Architecture / Runtime Facts
+
+Include this section only when the repository proves useful runtime facts such as service entrypoints, CLI commands, jobs, routes, API surfaces, queues, scheduled tasks, or package boundaries. Tables are useful for commands, routes, and jobs. Do not infer behavior from filenames alone.
+
+### Build & Commands
+
+List project-provided build, run, test, lint, generation, and local CI commands when they are documented or discoverable from tracked scripts and manifests. Prefer a compact table with purpose, command, and source. Do not include personal shell aliases or commands that depend on untracked local state.
+
 ### Development Standards
 
 Capture project-specific conventions: formatting, error handling, dependency boundaries, generated-code rules, config ownership, migration expectations, API compatibility, and areas needing extra care.
+
+### Testing
+
+Capture the repository's test commands, test layout, fixture or mock conventions, and any required environment assumptions. Prefer project scripts over language defaults. If the repository has no tests or the test entrypoint is unclear, say so briefly rather than inventing a command.
 
 ### Branch Naming
 
@@ -81,6 +97,14 @@ If a change modifies APIs, routes, protocols, schemas, data models, or validatio
 ### Validation Scripts
 
 For complex or repeatable validation, prefer reusable project-local scripts over long manual command chains. Scripts should be parameterized, reproducible, clear about pass/fail, and exit non-zero on failure. Do not create repository scripts for one-off checks unless they are likely to be reused or protect a public validation surface.
+
+### Security
+
+Include security guidance only when verified from repository code or docs, such as secret handling, authentication boundaries, sensitive logging rules, input validation, sandboxing, or permission checks. Do not add generic security advice.
+
+### Configuration
+
+Include configuration guidance only when verified from repository code or docs, such as config files, environment variables, config samples, feature flags, or deployment-specific overrides. Mark unknown required config as TODO instead of guessing values.
 
 ### Agent Review
 
