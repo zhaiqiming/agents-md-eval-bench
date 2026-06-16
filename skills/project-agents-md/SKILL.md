@@ -69,7 +69,7 @@ Use these defaults unless the repo already has stricter rules:
 
 Prefer project-provided checks from Makefiles, package scripts, CI scripts, or documented local gates. If no project command exists, use a language default:
 
-- Go: `go vet ./...`.
+- Go: use `golangci-lint run ./...` when `golangci-lint` is available; fall back to `go vet ./...` only when `golangci-lint` is unavailable. If the repo already has `.golangci.yml`, `.golangci.yaml`, or a project lint command, prefer that project configuration. Do not create a new golangci-lint config unless the user asks or the repo already expects one. If Codex sandboxing blocks Go or golangci-lint cache writes, rerun with `GOCACHE` and `GOLANGCI_LINT_CACHE` set to writable temp or project-local cache directories before treating the check as failed.
 - Python: prefer `ruff`, `mypy`, `pytest`, or project scripts; otherwise at least `python -m compileall`.
 - JavaScript/TypeScript: prefer package-manager `lint`, `test`, or `tsc --noEmit`.
 - Java/Kotlin: prefer Gradle or Maven `check`/`test`.
