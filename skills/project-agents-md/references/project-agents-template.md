@@ -102,11 +102,15 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 
 ## Agent Review
 
-- [MUST] Keep `/review` and Coco separate from language static checks.
-- [MUST] When both are available and not blocked, start `/review` and Coco review-only checks concurrently.
-- [MUST] Use both checks to look for code logic errors, boundary errors, concurrency/error-handling issues, compatibility risks, incomplete implementation, and mismatch with the plan.
-- [MUST] Keep Coco read-only: no file edits, no real request execution, and no yolo-style write permissions.
-- [MUST] Report both results; if one check cannot run, explain why.
+- [MUST] Keep Codex `/review`, reviewer subagents, and TraeCLI review separate from language static checks.
+- [MUST] Do not treat Codex `/review` as a shell command, MCP tool, or directly callable agent tool. When the current Codex surface supports it, `/review` is user-triggered; use its returned comments as review guidance.
+- [RECOMMENDED] When the user explicitly authorizes agent review or parallel review and subagent tooling is available, spawn a read-only reviewer subagent.
+- [MUST] Use TraeCLI as the default external review second perspective when `traecli` is available and not blocked.
+- [MUST] Prefer `traecli review --uncommitted <prompt>` for working-tree changes, `traecli review --base <branch> <prompt>` for branch comparisons, or `traecli review --commit <sha> --title <title> <prompt>` for a single commit.
+- [MUST] Keep TraeCLI review-only: do not run `traecli exec` to modify files, do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or yolo-style write permissions for review.
+- [RECOMMENDED] For stricter isolation, use `traecli exec --sandbox read-only --ephemeral review ...` when that form works in the current TraeCLI version.
+- [MUST] Review focus: code logic errors, boundary errors, concurrency/error-handling issues, compatibility risks, incomplete implementation, mismatch with the plan, and missing tests.
+- [MUST] If reviewer subagent and TraeCLI are both available and authorized, start them concurrently. Report both results; if one check cannot run, explain why.
 
 ## AGENTS.md Maintenance
 

@@ -42,7 +42,7 @@ Use this skill to produce project-level Codex guidance from verified repository 
    - Check that project structure and workflows are concise, verified, and decision-useful.
    - Check that no secrets, transient local state, or overly detailed file inventories were added.
    - Check that static checks are language-appropriate and prefer project-defined commands.
-   - Check that `/review` and Coco are in a language-independent Agent Review section.
+   - Check that Codex `/review`, reviewer subagents, and TraeCLI review are in a language-independent Agent Review section.
    - Check that maintainable facts are inside marked `AGENTS-MAINTAIN` blocks when future updates are expected.
 
 ## Content Guidelines
@@ -110,10 +110,15 @@ Include configuration guidance only when verified from repository code or docs, 
 
 Keep agent review separate from language static checks.
 
-- [MUST] When `/review` and Coco are both available and not blocked by permissions or environment, start both review-only checks concurrently.
-- [MUST] Use `/review` and Coco to look for logic errors, boundary errors, incomplete implementation, divergence from the plan, error-handling issues, concurrency issues, and compatibility risks.
-- [MUST] Treat Coco as a read-only second perspective: do not let Coco modify files, send real requests, or run with yolo-style write permissions.
-- [MUST] Report results from both checks. If one cannot run, explain the blocker and report the other result.
+- [MUST] Do not treat Codex `/review` as a shell command, MCP tool, or directly callable agent tool. It is a user-facing Codex slash command when the current surface supports it.
+- [RECOMMENDED] If the user wants Codex's built-in review pass and the current surface supports `/review`, ask the user to run `/review`, then use the returned comments as review guidance.
+- [RECOMMENDED] When the user explicitly authorizes agent review or parallel review and subagent tooling is available, spawn a read-only reviewer subagent.
+- [MUST] Use TraeCLI as the default external review second perspective when `traecli` is available and not blocked.
+- [MUST] Prefer `traecli review --uncommitted <prompt>` for working-tree changes, `traecli review --base <branch> <prompt>` for branch comparisons, or `traecli review --commit <sha> --title <title> <prompt>` for a single commit.
+- [MUST] Keep TraeCLI review-only: do not run `traecli exec` to modify files, do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or yolo-style write permissions for review.
+- [RECOMMENDED] For stricter isolation, use `traecli exec --sandbox read-only --ephemeral review ...` when that form works in the current TraeCLI version.
+- [MUST] Review focus: logic errors, boundary errors, incomplete implementation, divergence from the plan, error-handling issues, concurrency issues, compatibility risks, and missing tests.
+- [MUST] If reviewer subagent and TraeCLI are both available and authorized, start them concurrently. Report both results; if one cannot run, explain the blocker and residual risk.
 
 ### AGENTS.md Maintenance
 
