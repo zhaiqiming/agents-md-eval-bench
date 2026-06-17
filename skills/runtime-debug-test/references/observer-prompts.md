@@ -2,20 +2,20 @@
 
 Use these prompts when TraeCLI can reduce context cost through bounded read-only observation. Fill every scope field that is known. Remove irrelevant keywords instead of sending a broad prompt.
 
-Run TraeCLI observer tasks in read-only mode and keep them non-persistent where possible. If TraeCLI needs the user's host auth, SSO state, local auth files, or intranet network and sandboxing blocks it, rerun the TraeCLI command with `sandbox_permissions="require_escalated"` and a narrow prefix rule such as `["traecli", "exec"]`. If local TraeCLI is unavailable, report TraeCLI observer as unavailable instead of falling back to broad tracing.
+Run every TraeCLI observer command locally outside the Codex sandbox with `sandbox_permissions="require_escalated"` and a narrow prefix rule such as `["traecli"]`. TraeCLI depends on host-local security context, credentials, and runtime state, so do not first try it inside the Codex sandbox. Keep TraeCLI's own execution mode read-only and non-persistent where possible. If local TraeCLI is unavailable, report TraeCLI observer as unavailable instead of falling back to broad tracing.
 
-Always specify the model. Use `Test-O-New-Thinking` first. If TraeCLI reports that model is unavailable, unauthorized, or unsupported, retry the same observer task once with `DeepSeek-V4-Pro` and report the fallback reason. Do not switch models for unrelated failures.
+Always specify the model. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If TraeCLI reports that a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for unrelated failures.
 
-Suggested invocation shape:
+Suggested invocation shape. Write the final response to a summary file and redirect stdout/stderr to a raw log; Codex should read the summary file first and inspect the raw log only when needed:
 
 ```bash
-traecli exec -m Test-O-New-Thinking --sandbox read-only --ephemeral -o /tmp/runtime-observer.md '<observer prompt>'
+traecli exec -m <model> --sandbox read-only --ephemeral -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
 ```
 
-When the observer prompt includes `bytedcli`, log, metric, TCC, MQ, RDS, Redis, or other shell-based read-only commands, keep the prompt explicit that only read-only commands are allowed. If the current TraeCLI version needs tool allowlisting, use `--allowed-tool` narrowly for those read-only commands.
+When the observer prompt includes `bytedcli`, log, metric, TCC, MQ, RDS, Redis, or other shell-based read-only commands, keep the prompt explicit that only read-only commands are allowed. If the current TraeCLI version needs tool allowlisting, use `--allowed-tool` narrowly for those read-only commands. The outer TraeCLI command still runs locally outside the Codex sandbox.
 
 ```bash
-traecli exec -m Test-O-New-Thinking --sandbox read-only --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer.md '<observer prompt>'
+traecli exec -m <model> --sandbox read-only --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
 ```
 
 If TraeCLI reports tool execution permission denied for a read-only platform command, retry once with a narrower `--allowed-tool` pattern before declaring the observer blocked. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style permission bypasses for observer work.

@@ -115,10 +115,11 @@ Keep agent review separate from language static checks.
 - [MUST] Do not treat Codex `/review` as a shell command, MCP tool, or directly callable agent tool. It is a user-facing Codex slash command when the current surface supports it.
 - [RECOMMENDED] If the user wants Codex's built-in review pass and the current surface supports `/review`, ask the user to run `/review`, then use the returned comments as review guidance.
 - [RECOMMENDED] When the user explicitly authorizes agent review or parallel review and subagent tooling is available, spawn a read-only reviewer subagent.
-- [MUST] Use TraeCLI as the default external review second perspective when `traecli` is available and not blocked.
-- [MUST] Prefer `traecli review --uncommitted <prompt>` for working-tree changes, `traecli review --base <branch> <prompt>` for branch comparisons, or `traecli review --commit <sha> --title <title> <prompt>` for a single commit.
-- [MUST] Keep TraeCLI review-only: do not run `traecli exec` to modify files, do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or yolo-style write permissions for review.
-- [RECOMMENDED] For stricter isolation, use `traecli exec --sandbox read-only --ephemeral review ...` when that form works in the current TraeCLI version.
+- [MUST] Use TraeCLI as the default external review second perspective when `traecli` is available and not blocked. Run TraeCLI locally outside the Codex sandbox when host-local security context is required.
+- [MUST] Choose an explicit TraeCLI review model from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If a model is unavailable, unauthorized, or unsupported, try the next model and report the fallback reason.
+- [MUST] Prefer `traecli exec review` with `-o <summary-file>` and shell stdout/stderr redirection to a raw log so Codex reads only the final summary by default. Example shape: `traecli exec review -m <model> --uncommitted -o /tmp/trae-review-summary.md '<prompt>' >/tmp/trae-review-raw.log 2>&1`.
+- [MUST] Use `--uncommitted` for working-tree changes, `--base <branch>` for branch comparisons, or `--commit <sha> --title <title>` for a single commit.
+- [MUST] Keep TraeCLI review-only: do not ask it to modify files, do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or yolo-style write permissions for review.
 - [MUST] Review focus: logic errors, boundary errors, incomplete implementation, divergence from the plan, error-handling issues, concurrency issues, compatibility risks, and missing tests.
 - [MUST] If reviewer subagent and TraeCLI are both available and authorized, start them concurrently. Report both results; if one cannot run, explain the blocker and residual risk.
 

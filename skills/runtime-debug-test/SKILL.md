@@ -28,7 +28,9 @@ Do not ask TraeCLI to run internal long-polling loops. For long-running observat
 
 Accept TraeCLI output only when it includes evidence identifiers such as `task_no`, `task_id`, `msg_id`, `log_id`, metric name, query link, resource name/version, or source path. If identifiers are missing, ask for a narrower follow-up or treat the output as low confidence.
 
-Before first TraeCLI delegation in a session, check availability without triggering a real runtime action:
+TraeCLI cannot run correctly inside the Codex sandbox because it depends on host-local security context, credentials, and runtime state. Run every TraeCLI command locally outside the Codex sandbox with `sandbox_permissions="require_escalated"` and a narrow prefix rule such as `["traecli"]`. Do not first try TraeCLI inside the sandbox; sandbox failures are not meaningful TraeCLI health signals.
+
+Before first TraeCLI delegation in a session, check availability locally without triggering a real runtime action:
 
 ```bash
 command -v traecli
@@ -36,15 +38,15 @@ traecli --version
 traecli login status
 ```
 
-Always specify the TraeCLI observer model explicitly. Use `Test-O-New-Thinking` first. If and only if TraeCLI reports that `Test-O-New-Thinking` is unavailable, unauthorized, or unsupported, retry the same observer task once with `DeepSeek-V4-Pro` and report the fallback reason. Do not silently switch models for other failures such as sandbox, auth, network, or tool permission errors.
+Always specify the TraeCLI observer model explicitly. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for other failures such as sandbox, auth, network, or tool permission errors.
 
-Run TraeCLI observer work in read-only mode and keep it non-persistent where possible:
+Run TraeCLI observer work in read-only mode and keep it non-persistent where possible. Always write the final response to a summary file and redirect stdout/stderr to a raw log so Codex reads only the summary by default:
 
 ```bash
-traecli exec -m Test-O-New-Thinking --sandbox read-only --ephemeral -o /tmp/runtime-observer.md '<observer prompt>'
+traecli exec -m <model> --sandbox read-only --ephemeral -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
 ```
 
-If the observer prompt needs shell-based read-only platform commands such as `bytedcli`, use `--allowed-tool` narrowly for those read-only commands when the current TraeCLI version supports it. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style write-permission bypasses for routine runtime observation.
+If the observer prompt needs shell-based read-only platform commands such as `bytedcli`, use `--allowed-tool` narrowly for those read-only commands when the current TraeCLI version supports it. The TraeCLI process still runs locally outside the Codex sandbox; `--sandbox read-only` is TraeCLI's own sandbox for model-generated commands. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style write-permission bypasses for routine runtime observation.
 
 Treat local TraeCLI health-check results explicitly:
 
@@ -52,7 +54,7 @@ Treat local TraeCLI health-check results explicitly:
 - Local TraeCLI fails with auth, SSO, token, model authorization, or permission errors: stop delegation and report the exact blocker.
 - Local TraeCLI fails without diagnostics: report TraeCLI observer as unavailable and continue only with short bounded main-agent checks.
 
-If TraeCLI fails with auth, token, keyring, SSO, sandbox, or permission errors, stop delegation and report the exact blocker. If the only blocker is `Test-O-New-Thinking` model availability or authorization, retry once with `DeepSeek-V4-Pro`. Do not silently switch modes or bypass permissions.
+If TraeCLI fails with auth, token, keyring, SSO, sandbox, or permission errors, stop delegation and report the exact blocker. If the only blocker is model availability or authorization, retry once with the next model from the ordered model list. Do not silently switch modes or bypass permissions.
 
 Use the prompt templates in [references/observer-prompts.md](references/observer-prompts.md) when delegating:
 
