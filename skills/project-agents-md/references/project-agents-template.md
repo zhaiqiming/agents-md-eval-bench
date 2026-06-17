@@ -65,9 +65,10 @@ Use this as a skeleton. Replace bracketed text with verified repository facts. D
 ## Static Checks
 
 <!-- AGENTS-MAINTAIN:BEGIN static-checks -->
+- [MUST] Keep this section separate from `Testing` and `Build & Commands`; tests and builds do not replace static analysis.
 - [MUST] Prefer project-defined local checks from Makefiles, package scripts, CI scripts, or documented commands.
 - [MUST] If no project command exists, use the language-appropriate baseline:
-  - Go: `golangci-lint run ./...` when `golangci-lint` is available; fall back to `go vet ./...` only when `golangci-lint` is unavailable. If the repo has `.golangci.yml`, `.golangci.yaml`, or a project lint command, use that project configuration. Do not create a new golangci-lint config unless requested or already expected by the repo. If sandboxing blocks Go or golangci-lint cache writes, rerun with `GOCACHE` and `GOLANGCI_LINT_CACHE` set to writable temp or project-local cache directories before treating the check as failed.
+  - Go: `golangci-lint run ./...` when `golangci-lint` is available; fall back to `go vet ./...` only when `golangci-lint` is unavailable. If the repo has `.golangci.yml`, `.golangci.yaml`, or a project lint command, use that project configuration. Do not omit `golangci-lint` merely because `go test` or `go vet` is present. Do not create a new golangci-lint config unless requested or already expected by the repo. If sandboxing blocks Go or golangci-lint cache writes, rerun with `GOCACHE` and `GOLANGCI_LINT_CACHE` set to writable temp or project-local cache directories before treating the check as failed.
   - Python: project `ruff`/`mypy`/`pytest` first; otherwise `python -m compileall`.
   - JavaScript/TypeScript: package-manager `lint`, `test`, or `tsc --noEmit`.
   - Java/Kotlin: Gradle or Maven `check`/`test`.

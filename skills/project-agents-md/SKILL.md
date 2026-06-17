@@ -35,6 +35,7 @@ Use this skill to produce project-level Codex guidance from verified repository 
      - `[RECOMMENDED]` for preferred but context-dependent behavior.
    - Point long SOPs to existing project skills, scripts, or docs instead of copying lengthy procedures into `AGENTS.md`.
    - Prefer a compact tree for `Repository Map` or `Architecture` sections when it improves scanability. Keep it decision-useful, usually no deeper than 2-3 levels.
+   - Always include a `Static Checks` section separate from `Testing` and `Build & Commands`. Tests and build commands do not satisfy this section by themselves.
    - Use `AGENTS-MAINTAIN` blocks for derived or likely-changing repository facts so future agents can update them without rewriting stable policy sections.
    - Put stable policy sections outside `AGENTS-MAINTAIN` blocks. Use managed blocks for derived sections such as repository map, architecture/runtime facts, build commands, testing, static checks, configuration, security, and validation scripts.
 
@@ -42,6 +43,7 @@ Use this skill to produce project-level Codex guidance from verified repository 
    - Check that project structure and workflows are concise, verified, and decision-useful.
    - Check that no secrets, transient local state, or overly detailed file inventories were added.
    - Check that static checks are language-appropriate and prefer project-defined commands.
+   - Check that `Static Checks` contains at least one lint, type-check, vet, compile-check, or equivalent static-analysis command. Do not count tests alone as static checks.
    - Check that Codex `/review`, reviewer subagents, and TraeCLI review are in a language-independent Agent Review section.
    - Check that maintainable facts are inside marked `AGENTS-MAINTAIN` blocks when future updates are expected.
 
@@ -83,9 +85,9 @@ Use these defaults unless the repo already has stricter rules:
 
 ### Static Checks
 
-Prefer project-provided checks from Makefiles, package scripts, CI scripts, or documented local gates. If no project command exists, use a language default:
+Always include a `Static Checks` section. Keep it separate from `Testing` and `Build & Commands`; tests may be listed nearby, but they are not a substitute for static analysis. Prefer project-provided checks from Makefiles, package scripts, CI scripts, or documented local gates. If no project command exists, use a language default:
 
-- Go: use `golangci-lint run ./...` when `golangci-lint` is available; fall back to `go vet ./...` only when `golangci-lint` is unavailable. If the repo already has `.golangci.yml`, `.golangci.yaml`, or a project lint command, prefer that project configuration. Do not create a new golangci-lint config unless the user asks or the repo already expects one. If Codex sandboxing blocks Go or golangci-lint cache writes, rerun with `GOCACHE` and `GOLANGCI_LINT_CACHE` set to writable temp or project-local cache directories before treating the check as failed.
+- Go: use `golangci-lint run ./...` when `golangci-lint` is available; fall back to `go vet ./...` only when `golangci-lint` is unavailable. If the repo already has `.golangci.yml`, `.golangci.yaml`, or a project lint command, prefer that project configuration. Do not omit `golangci-lint` merely because `go test` or `go vet` is present. Do not create a new golangci-lint config unless the user asks or the repo already expects one. If Codex sandboxing blocks Go or golangci-lint cache writes, rerun with `GOCACHE` and `GOLANGCI_LINT_CACHE` set to writable temp or project-local cache directories before treating the check as failed.
 - Python: prefer `ruff`, `mypy`, `pytest`, or project scripts; otherwise at least `python -m compileall`.
 - JavaScript/TypeScript: prefer package-manager `lint`, `test`, or `tsc --noEmit`.
 - Java/Kotlin: prefer Gradle or Maven `check`/`test`.

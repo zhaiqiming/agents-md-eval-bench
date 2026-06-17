@@ -1,6 +1,6 @@
 ---
 name: runtime-debug-test
-description: Plan and execute runtime debug/test work after backend changes. Use when Codex must validate local or BOE/PPE service behavior, construct runtime test data, inspect TCC/local config/MQ/MySQL/Redis dependencies, start services, send real test requests, trace logs/metrics, coordinate Coco as a read-only observer, maintain project-local runtime lessons, or produce a runtime test report.
+description: Plan and execute runtime debug/test work after backend changes. Use when Codex must validate local or BOE/PPE service behavior, construct runtime test data, inspect TCC/local config/MQ/MySQL/Redis dependencies, start services, send real test requests, trace logs/metrics, coordinate TraeCLI as a read-only observer, maintain project-local runtime lessons, or produce a runtime test report.
 ---
 
 # Runtime Debug/Test
@@ -20,35 +20,48 @@ Do not jump directly to curl examples. First understand the feature, enumerate d
 
 The main agent owns runtime safety and final judgment. It designs the test plan, executes any side-effectful action, starts or stops services, sends requests or messages, changes config/resources, performs cleanup, and decides pass/fail.
 
-Within this skill, Coco is restricted to bounded read-only observer or researcher work when it reduces context cost. Coco can search logs, metrics, Argos, read-only MQ/RDS/Redis/TCC state, internal docs, or source paths. This restriction is local to `runtime-debug-test` and does not change Coco's behavior in other skills. In this skill, Coco must not execute real requests, send MQ messages, update config or data, change offsets, deploy, restart services, edit files, clean resources, or make final pass/fail decisions.
+Within this skill, TraeCLI is restricted to bounded read-only observer or researcher work when it reduces context cost. TraeCLI can search logs, metrics, Argos, read-only MQ/RDS/Redis/TCC state, internal docs, or source paths. This restriction is local to `runtime-debug-test` and does not change TraeCLI's behavior in other contexts. In this skill, TraeCLI must not execute real requests, send MQ messages, update config or data, change offsets, deploy, restart services, edit files, clean resources, or make final pass/fail decisions.
 
-Long-running exploration or tracing tasks are Coco-only. If Coco is unavailable, blocked by auth, or lacks access, report long-running tracing as unavailable or blocked; do not use the main agent's own tools to perform long-cycle log/metric/trace polling, broad historical tracing, or extended platform observation.
+For BOE/PPE/online short-window log or metric lookups, delegate to TraeCLI first as a bounded read-only snapshot when `traecli` is available and the needed auth/network is ready. If TraeCLI is unavailable, blocked by auth, lacks access, or returns incomplete evidence, record the blocker and then the main agent may run one narrow fallback query for the same window.
 
-Accept Coco output only when it includes evidence identifiers such as `task_no`, `task_id`, `msg_id`, `log_id`, metric name, query link, resource name/version, or source path. If identifiers are missing, ask for a narrower follow-up or treat the output as low confidence.
+Do not ask TraeCLI to run internal long-polling loops. For long-running observation, the main agent owns the cadence and may delegate repeated TraeCLI snapshot tasks between checks. If TraeCLI snapshots are unavailable or repeatedly incomplete, report long-running tracing as unavailable or blocked; do not replace it with main-agent long-cycle log/metric/trace polling, broad historical tracing, or extended platform observation.
 
-Before first Coco delegation in a session, run:
+Accept TraeCLI output only when it includes evidence identifiers such as `task_no`, `task_id`, `msg_id`, `log_id`, metric name, query link, resource name/version, or source path. If identifiers are missing, ask for a narrower follow-up or treat the output as low confidence.
+
+Before first TraeCLI delegation in a session, check availability without triggering a real runtime action:
 
 ```bash
-coco -p -c model.name=DeepSeek-V4-Flash 'Say hi only.'
+command -v traecli
+traecli --version
+traecli login status
 ```
 
-Run every Coco command locally outside the Codex sandbox, including the `Say hi only.` health check. Use the shell tool with `sandbox_permissions="require_escalated"` and a narrow prefix rule such as `["coco", "-p"]`. Coco may need the user's host keyring, SSO state, local auth files, intranet network, or model authorization, so sandbox execution is not supported for this skill.
+Always specify the TraeCLI observer model explicitly. Use `Test-O-New-Thinking` first. If and only if TraeCLI reports that `Test-O-New-Thinking` is unavailable, unauthorized, or unsupported, retry the same observer task once with `DeepSeek-V4-Pro` and report the fallback reason. Do not silently switch models for other failures such as sandbox, auth, network, or tool permission errors.
 
-Treat local Coco health-check results explicitly:
+Run TraeCLI observer work in read-only mode and keep it non-persistent where possible:
 
-- Local Coco succeeds: use local Coco for bounded read-only observer tasks.
-- Local Coco fails with auth, SSO, token, model authorization, or permission errors: stop delegation and report the exact blocker.
-- Local Coco fails without diagnostics: report Coco observer as unavailable and continue only with short bounded main-agent checks.
+```bash
+traecli exec -m Test-O-New-Thinking --sandbox read-only --ephemeral -o /tmp/runtime-observer.md '<observer prompt>'
+```
 
-If Coco fails with `401`, `invalid api-key`, auth, token, keyring, SSO, or model authorization errors, stop delegation and report the exact blocker. Do not silently switch models.
+If the observer prompt needs shell-based read-only platform commands such as `bytedcli`, use `--allowed-tool` narrowly for those read-only commands when the current TraeCLI version supports it. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style write-permission bypasses for routine runtime observation.
+
+Treat local TraeCLI health-check results explicitly:
+
+- Local TraeCLI succeeds: use TraeCLI for bounded read-only observer tasks.
+- Local TraeCLI fails with auth, SSO, token, model authorization, or permission errors: stop delegation and report the exact blocker.
+- Local TraeCLI fails without diagnostics: report TraeCLI observer as unavailable and continue only with short bounded main-agent checks.
+
+If TraeCLI fails with auth, token, keyring, SSO, sandbox, or permission errors, stop delegation and report the exact blocker. If the only blocker is `Test-O-New-Thinking` model availability or authorization, retry once with `DeepSeek-V4-Pro`. Do not silently switch modes or bypass permissions.
 
 Use the prompt templates in [references/observer-prompts.md](references/observer-prompts.md) when delegating:
 
 - Runtime log search
+- Runtime snapshot
 - Internal research
 - Bounded runtime monitoring
 
-When delegating runtime observation to Coco, use the observer prompt contract in [references/observer-prompts.md](references/observer-prompts.md). For BOE/PPE/online observation, do not accept local evidence unless the target is local runtime; Coco must use named platform tools or report blocked.
+When delegating runtime observation to TraeCLI, use the observer prompt contract in [references/observer-prompts.md](references/observer-prompts.md). For BOE/PPE/online observation, do not accept local evidence unless the target is local runtime; TraeCLI must use named platform tools or report blocked.
 
 ## Token And Evidence Discipline
 
@@ -116,7 +129,7 @@ Inspect available config before finalizing test data:
 - For TCC, use `bytedcli tcc config get/list` where available.
 - Distinguish latest version from online/effective version.
 - Preserve unrelated fields when asking to update config.
-- Delegate high-volume read-only config discovery to Coco only with explicit resource names, env, questions, and max output.
+- Delegate high-volume read-only config discovery to TraeCLI only with explicit resource names, env, questions, and max output.
 
 If config cannot be confirmed, stop and ask a targeted question. Include the proposed TCC/local JSON/YAML needed to unblock.
 
@@ -137,14 +150,16 @@ Use local code and available read-only tools to confirm resource names and schem
 - MQ: topic/group/cluster and sample message schema.
 - Redis: key pattern, value shape, TTL, and cleanup command.
 
-### 5. Compile And Startup Readiness
+### 5. End-To-End Compile And Startup Readiness
 
-After dependencies are clear:
+After dependencies are clear, validate the whole runnable service, not only the packages touched by the change.
 
-- Run focused compile/tests first, then broader compile if appropriate.
-- Build or start the service using repo-native commands.
+- Run focused package tests for changed code, but treat them as additive evidence only.
+- Always run an entrypoint/root compile check that covers startup wiring. For Go services, prefer `go test .` or the repo's equivalent root-package compile command before package-scoped tests.
+- Run the repo-native build command when available, such as `bash build.sh`, `make build`, or the documented package build. Do this before runtime execution unless the user explicitly accepts an environment blocker.
+- Build or start the service using repo-native commands and verify the startup path can reach the changed wiring.
 - If startup requires external resources, verify the missing config/resource error before asking the user.
-- Do not proceed to Phase 2 until the service can start, or the startup blocker is explicitly accepted as the test boundary.
+- Do not treat package-scoped tests as startup readiness. Do not proceed to Phase 2 until the root compile/build/start check passes, or the blocker is explicitly accepted as the test boundary.
 
 End Phase 1 with:
 
@@ -197,7 +212,9 @@ For each case:
 6. Compare actual behavior with expected behavior.
 7. Update the matrix and cleanup state.
 
-When observation is long-running or noisy, delegate only read-only monitoring to Coco with bounded time, identifiers, success signal, failure signal, and timeout. The main agent still executes the case and decides the result. If Coco cannot perform the observation, mark the long-running tracing item blocked or unavailable and report the missing evidence; do not replace it with main-agent long-cycle tracing.
+For BOE/PPE/online short-window log or metric observation, delegate a TraeCLI snapshot before querying directly. If TraeCLI fails, times out, or returns evidence without identifiers, record the failed delegation and run at most one narrow main-agent fallback query for that snapshot.
+
+When observation is long-running or noisy, do not delegate an internal loop to TraeCLI. The main agent should schedule bounded TraeCLI snapshot tasks with explicit windows, identifiers, success/failure signals, and stop conditions, then decide whether another snapshot is needed. If TraeCLI snapshots cannot perform the observation, mark the long-running tracing item blocked or unavailable and report the missing evidence; do not replace it with main-agent long-cycle tracing.
 
 If behavior differs from expected, diagnose before moving on unless the user asked only for test data construction. If two diagnosis iterations still do not identify the root cause, stop execution and report current evidence, excluded hypotheses, and the blocker.
 
@@ -224,7 +241,7 @@ Dependency Readiness:
 - Downstream:
 
 Observer Usage:
-- Coco delegated tasks:
+- TraeCLI delegated tasks:
 - Evidence accepted:
 - Evidence rejected or incomplete:
 
