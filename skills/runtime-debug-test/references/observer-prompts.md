@@ -2,23 +2,21 @@
 
 Use these prompts when TraeCLI can reduce context cost through bounded read-only observation. Fill every scope field that is known. Remove irrelevant keywords instead of sending a broad prompt.
 
-Run every TraeCLI observer command locally outside the Codex sandbox with `sandbox_permissions="require_escalated"` and a narrow prefix rule such as `["traecli"]`. TraeCLI depends on host-local security context, credentials, and runtime state, so do not first try it inside the Codex sandbox. Keep TraeCLI's own execution mode read-only and non-persistent where possible. If local TraeCLI is unavailable, report TraeCLI observer as unavailable instead of falling back to broad tracing.
+Run TraeCLI observer commands from Codex locally with `sandbox_permissions="require_escalated"`; do not try TraeCLI inside the Codex sandbox first. Use `--sandbox danger-full-access` for host-local sec, internal network, credentials, and runtime state. This is process capability, not write permission: TraeCLI remains a read-only observer/researcher and must not write config, send requests, send MQ messages, mutate DB/Redis, deploy, restart, clean resources, or make final pass/fail judgments.
 
 Always specify the model. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If TraeCLI reports that a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for unrelated failures.
 
-Suggested invocation shape. Use `-c "sandbox_read_only.network_access=true"` immediately after `--sandbox read-only` so read-only runtime observers can perform network-backed platform reads. Write the final response to a summary file and redirect stdout/stderr to a raw log; Codex should read the summary file first and inspect the raw log only when needed:
+Suggested invocation shape. Write the final response to a summary file and redirect stdout/stderr to a raw log; Codex should read the summary file first and inspect the raw log only when needed:
 
 ```bash
-traecli exec -m <model> --sandbox read-only -c "sandbox_read_only.network_access=true" --ephemeral -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
+traecli exec -m <model> --sandbox danger-full-access --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
 ```
 
-When the observer prompt includes `bytedcli`, log, metric, TCC, MQ, RDS, Redis, or other shell-based read-only commands, keep the prompt explicit that only read-only commands are allowed. If the current TraeCLI version needs tool allowlisting, use `--allowed-tool` narrowly for those read-only commands. The outer TraeCLI command still runs locally outside the Codex sandbox.
+When the observer prompt includes `bytedcli`, log, metric, TCC, MQ, RDS, Redis, or other shell-based platform commands, use `--allowed-tool` as narrowly as practical. Use `Bash(bytedcli *:*)` only when necessary, and then make the prompt explicitly allow only read-only subcommands. Broader shell access is allowed only for local processing of already-collected raw logs or command output; conclusions from that processing must include the raw snippets that support them.
 
-```bash
-traecli exec -m <model> --sandbox read-only -c "sandbox_read_only.network_access=true" --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
-```
+For prompts that ask TraeCLI to run `bytedcli` or another read-only platform CLI, explicitly state that the outer invocation uses `danger-full-access` only as execution capability and allowlists the read-only command. The observer must attempt the listed read-only command before reporting blocked. Blocked status requires a concrete command result such as auth required, command not found, network failure, permission denied, unsupported model, or tool-denied.
 
-If TraeCLI reports tool execution permission denied for a read-only platform command, retry once with a narrower `--allowed-tool` pattern before declaring the observer blocked. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style permission bypasses for observer work.
+If TraeCLI reports tool execution permission denied for a read-only platform command, retry once with a narrower `--allowed-tool` pattern before declaring the observer blocked. Do not use `--permission-mode bypass_permissions`, `-y`, or other yolo-style permission bypasses for observer work.
 
 Every TraeCLI observer prompt must include:
 
@@ -26,6 +24,9 @@ Every TraeCLI observer prompt must include:
 - Goal description: the exact signals to confirm or rule out.
 - Command reference: preferred read-only commands, env, time range, identifiers, and output limits.
 - Prohibited sources/actions: local files/logs that must not be used and all write operations.
+- Evidence requirement: every conclusion from log, metric, or raw-output processing must include representative raw snippets and identifiers.
+- Early return rule: if enough evidence exists to answer the goal, stop querying and return the summary immediately.
+- Assigned-scope rule: if this is one task in a parallel fan-out, observe only the assigned window, task ID, resource, or question; do not expand into neighboring scopes.
 
 For BOE/PPE/online runtime observation, add: "Do not inspect local `output/log`, local files, local grep results, local process state, or local DB files. Use only the platform commands listed below or report blocked."
 
@@ -38,6 +39,11 @@ Role:
 - You are a read-only observer and report generator.
 - Do not modify files, send HTTP/MQ requests, trigger eval/MR/Bits/callbacks, update TCC/RDS/Redis/MQ/IAM/alerts, change offsets, deploy, or restart services.
 - Do not make final pass/fail judgments. Collect evidence and state confidence only.
+- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- Every finding or conclusion derived from raw logs must include representative raw snippets and identifiers.
+- Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
+- If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
+- If this task is part of a parallel fan-out, observe only the assigned window, task ID, or resource; do not expand into neighboring scopes.
 - If auth, SSO, permission, model authorization, or login is required, stop and report the exact blocker.
 
 Task Description:
@@ -81,6 +87,7 @@ Return:
 | Findings | top 5 patterns, severity, estimated count |
 | Expected Signals | observed or not observed for requested identifiers |
 | Evidence | snippets plus log_id/task_no/msg_id/metric/query link |
+| Raw Snippet Basis | raw lines or short excerpts supporting each conclusion |
 | Missing Auth/Access | exact command and error if blocked |
 | Recommended Next Step | one concrete action for the main agent |
 ```
@@ -97,6 +104,10 @@ Role:
 - Complete exactly one bounded snapshot and return immediately.
 - Do not run an internal loop, sleep between attempts, or keep watching after the first bounded query set.
 - Do not modify files, send HTTP/MQ requests, trigger eval/MR/Bits/callbacks, update TCC/RDS/Redis/MQ/IAM/alerts, change offsets, deploy, or restart services.
+- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- Every finding or conclusion derived from raw logs must include representative raw snippets and identifiers.
+- Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
+- If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
 - If auth, SSO, permission, model authorization, or login is required, stop and report the exact blocker.
 
 Task Description:
@@ -131,6 +142,7 @@ Return:
 | Query Scope | exact site/env/time/psm/filter/tool |
 | Current State | latest observed state with timestamp |
 | Evidence | snippets plus log_id/task_no/msg_id/metric/query link/resource path |
+| Raw Snippet Basis | raw lines or short excerpts supporting each conclusion |
 | Not Observed | expected signal not found in this snapshot |
 | Missing Auth/Access | exact command and error if blocked |
 | Recommended Next Step | one concrete action for the main agent |
@@ -145,6 +157,11 @@ Role:
 - You are a read-only researcher and report generator.
 - Search only official/internal docs, CLI help, read-only platform state, or source code paths.
 - Do not modify files, update config/resources, send live requests, deploy, restart services, or make final design/pass-fail decisions.
+- When command references are provided and the outer invocation allowlists them, attempt those read-only commands before reporting blocked.
+- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- Every finding or conclusion derived from raw logs or source snippets must include representative raw snippets and identifiers.
+- Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
+- If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
 - If auth, SSO, permission, model authorization, or login is required, stop and report the exact blocker.
 
 Task Description:
@@ -175,6 +192,7 @@ Return:
 | Status | completed / partial / blocked |
 | Sources | doc title/path/link, CLI command, code path, or platform resource |
 | Observed Guidance | source-backed behavior or recommendation only |
+| Raw Snippet Basis | source excerpts or command output snippets supporting each conclusion |
 | Applicability | what conditions must be true for this project |
 | Unknowns | missing docs, ambiguous behavior, or conflicting evidence |
 | Missing Auth/Access | exact command and error if blocked |
@@ -190,6 +208,11 @@ Role:
 - You are a read-only observer and report generator.
 - The main agent will trigger the runtime case. Do not trigger requests, send messages, restart services, consume MQ/DLQ, change config, or clean resources.
 - Complete one bounded monitoring snapshot and return. Do not run internal long-polling loops; the main agent owns repeat cadence and stop decisions.
+- Observe only the assigned bounded window. Do not poll future time, sleep, or extend the window.
+- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- Every finding or conclusion derived from raw logs must include representative raw snippets and identifiers.
+- Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
+- If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
 
 Task Description:
 - [What concrete runtime case/resource should be monitored?]
@@ -209,6 +232,7 @@ Scope:
 | --- | --- |
 | env |  |
 | service/psm |  |
+| window_index | latest 0-10 min / latest 10-20 min / exact interval |
 | time_range |  |
 | resources | logs/metrics/MQ/RDS/Redis/TCC |
 | identifiers | task_no/task_id/log_id/msg_id/metric/marker |

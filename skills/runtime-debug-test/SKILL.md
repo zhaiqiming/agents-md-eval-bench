@@ -22,13 +22,13 @@ The main agent owns runtime safety and final judgment. It designs the test plan,
 
 Within this skill, TraeCLI is restricted to bounded read-only observer or researcher work when it reduces context cost. TraeCLI can search logs, metrics, Argos, read-only MQ/RDS/Redis/TCC state, internal docs, or source paths. This restriction is local to `runtime-debug-test` and does not change TraeCLI's behavior in other contexts. In this skill, TraeCLI must not execute real requests, send MQ messages, update config or data, change offsets, deploy, restart services, edit files, clean resources, or make final pass/fail decisions.
 
-For BOE/PPE/online short-window log or metric lookups, delegate to TraeCLI first as a bounded read-only snapshot when `traecli` is available and the needed auth/network is ready. If TraeCLI is unavailable, blocked by auth, lacks access, or returns incomplete evidence, record the blocker and then the main agent may run one narrow fallback query for the same window.
+For BOE/PPE/online logs, metrics, multi-task tracing, multi-window巡检, and internal best-practice research, delegate to TraeCLI first whenever `traecli` is available and the needed auth/network is ready. The main agent should query platforms directly only when TraeCLI is unavailable, blocked, incomplete, internally inconsistent, or when a narrow second check is needed to verify a critical conclusion. Record the delegation outcome before any fallback query.
 
-Do not ask TraeCLI to run internal long-polling loops. For long-running observation, the main agent owns the cadence and may delegate repeated TraeCLI snapshot tasks between checks. If TraeCLI snapshots are unavailable or repeatedly incomplete, report long-running tracing as unavailable or blocked; do not replace it with main-agent long-cycle log/metric/trace polling, broad historical tracing, or extended platform observation.
+Do not ask TraeCLI to run internal long-polling loops. For long-running observation or巡检, split observation into bounded newest-first windows instead of one broad query: window 1 latest 0-10 min, window 2 latest 10-20 min, and window 3 latest 20-30 min only if needed. Each delegated TraeCLI task observes exactly one window and returns; the main agent decides whether another window is needed. Independent windows or independent task IDs may be delegated to multiple TraeCLI processes in parallel when the platform query is bounded and each process has a unique summary/raw output path. Keep parallel fan-out small, normally at most 3 observers, and stop parallel delegation if auth, rate-limit, permission, or inconsistent-evidence failures appear. If TraeCLI snapshots are unavailable or repeatedly incomplete, report long-running tracing as unavailable or blocked; do not replace it with main-agent long-cycle log/metric/trace polling, broad historical tracing, or extended platform observation.
 
-Accept TraeCLI output only when it includes evidence identifiers such as `task_no`, `task_id`, `msg_id`, `log_id`, metric name, query link, resource name/version, or source path. If identifiers are missing, ask for a narrower follow-up or treat the output as low confidence.
+Accept TraeCLI output only when it includes evidence identifiers such as `task_no`, `task_id`, `msg_id`, `log_id`, metric name, query link, resource name/version, or source path. Conclusions produced from log or metric processing must include representative raw evidence snippets that support the conclusion. If identifiers or raw snippets are missing, ask for a narrower follow-up or treat the output as low confidence.
 
-TraeCLI cannot run correctly inside the Codex sandbox because it depends on host-local security context, credentials, and runtime state. Run every TraeCLI command locally outside the Codex sandbox with `sandbox_permissions="require_escalated"` and a narrow prefix rule such as `["traecli"]`. Do not first try TraeCLI inside the sandbox; sandbox failures are not meaningful TraeCLI health signals.
+Run every TraeCLI command from Codex locally with `sandbox_permissions="require_escalated"` and a narrow prefix such as `["traecli"]`; do not try TraeCLI inside the Codex sandbox first.
 
 Before first TraeCLI delegation in a session, check availability locally without triggering a real runtime action:
 
@@ -40,13 +40,20 @@ traecli login status
 
 Always specify the TraeCLI observer model explicitly. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for other failures such as sandbox, auth, network, or tool permission errors.
 
-Run TraeCLI observer work in read-only mode and keep it non-persistent where possible. When using TraeCLI's read-only sandbox for runtime observation, enable read-only network access with `-c "sandbox_read_only.network_access=true"` immediately after `--sandbox read-only`; otherwise TraeCLI may start successfully but fail to perform network-backed reads. Always write the final response to a summary file and redirect stdout/stderr to a raw log so Codex reads only the summary by default:
+Run TraeCLI observer work with `--sandbox danger-full-access` so it can use host-local sec, internal network, credentials, and runtime state. This is process capability, not write permission: TraeCLI remains a read-only observer/researcher and must not execute real requests, send MQ messages, update config or data, change offsets, deploy, restart services, edit files, clean resources, or make final pass/fail decisions. Always write the final response to a summary file and redirect stdout/stderr to a raw log so Codex reads only the summary by default:
 
 ```bash
-traecli exec -m <model> --sandbox read-only -c "sandbox_read_only.network_access=true" --ephemeral -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
+traecli exec -m <model> --sandbox danger-full-access --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
 ```
 
-If the observer prompt needs shell-based read-only platform commands such as `bytedcli`, use `--allowed-tool` narrowly for those read-only commands when the current TraeCLI version supports it. The TraeCLI process still runs locally outside the Codex sandbox; `--sandbox read-only` is TraeCLI's own sandbox for model-generated commands. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style write-permission bypasses for routine runtime observation.
+Prefer a task-specific read-only `--allowed-tool` pattern for platform queries. Use `--allowed-tool 'Bash(bytedcli *:*)'` only when necessary, and then make the prompt explicitly allow only read-only subcommands. Broader shell access is allowed only for local processing of already-collected raw logs or command output. Do not use `--permission-mode bypass_permissions`, `-y`, or other yolo-style permission bypasses for runtime observation.
+
+TraeCLI wait budgets are owned by the main agent:
+
+- Short-window log or metric snapshot: wait up to 180 seconds for the summary file.
+- Single task trace with known identifiers: wait up to 300 seconds.
+- Internal research or best-practice lookup: wait up to 300 seconds.
+- If the budget is exhausted, interrupt TraeCLI and inspect only the last 100 lines of the raw log to classify blocker or progress. Do not read the full raw log into context. If raw output contains enough evidence but no summary, run a narrow summary-only observer task or rerun with a narrower query.
 
 Treat local TraeCLI health-check results explicitly:
 
@@ -54,7 +61,7 @@ Treat local TraeCLI health-check results explicitly:
 - Local TraeCLI fails with auth, SSO, token, model authorization, or permission errors: stop delegation and report the exact blocker.
 - Local TraeCLI fails without diagnostics: report TraeCLI observer as unavailable and continue only with short bounded main-agent checks.
 
-If TraeCLI fails with auth, token, keyring, SSO, sandbox, or permission errors, stop delegation and report the exact blocker. If the only blocker is model availability or authorization, retry once with the next model from the ordered model list. Do not silently switch modes or bypass permissions.
+If TraeCLI fails with auth, token, keyring, SSO, sandbox, or permission errors, stop delegation and report the exact blocker. If the only blocker is model availability or authorization, retry once with the next model from the ordered model list. Do not silently bypass permissions or expand write capability.
 
 Use the prompt templates in [references/observer-prompts.md](references/observer-prompts.md) when delegating:
 
