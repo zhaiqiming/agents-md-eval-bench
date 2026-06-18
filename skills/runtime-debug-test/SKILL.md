@@ -40,10 +40,10 @@ traecli login status
 
 Always specify the TraeCLI observer model explicitly. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for other failures such as sandbox, auth, network, or tool permission errors.
 
-Run TraeCLI observer work in read-only mode and keep it non-persistent where possible. Always write the final response to a summary file and redirect stdout/stderr to a raw log so Codex reads only the summary by default:
+Run TraeCLI observer work in read-only mode and keep it non-persistent where possible. When using TraeCLI's read-only sandbox for runtime observation, enable read-only network access with `-c "sandbox_read_only.network_access=true"` immediately after `--sandbox read-only`; otherwise TraeCLI may start successfully but fail to perform network-backed reads. Always write the final response to a summary file and redirect stdout/stderr to a raw log so Codex reads only the summary by default:
 
 ```bash
-traecli exec -m <model> --sandbox read-only --ephemeral -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
+traecli exec -m <model> --sandbox read-only -c "sandbox_read_only.network_access=true" --ephemeral -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
 ```
 
 If the observer prompt needs shell-based read-only platform commands such as `bytedcli`, use `--allowed-tool` narrowly for those read-only commands when the current TraeCLI version supports it. The TraeCLI process still runs locally outside the Codex sandbox; `--sandbox read-only` is TraeCLI's own sandbox for model-generated commands. Do not use `--permission-mode bypass_permissions`, `--sandbox danger-full-access`, `-y`, or other yolo-style write-permission bypasses for routine runtime observation.
