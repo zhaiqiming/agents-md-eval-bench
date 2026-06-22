@@ -2,21 +2,23 @@
 
 Use these prompts when TraeCLI can reduce context cost through bounded read-only observation. Fill every scope field that is known. Remove irrelevant keywords instead of sending a broad prompt.
 
-Run TraeCLI observer commands from Codex locally with `sandbox_permissions="require_escalated"`; do not try TraeCLI inside the Codex sandbox first. Use `--sandbox danger-full-access` for host-local sec, internal network, credentials, and runtime state. This is process capability, not write permission: TraeCLI remains a read-only observer/researcher and must not write config, send requests, send MQ messages, mutate DB/Redis, deploy, restart, clean resources, or make final pass/fail judgments.
+Run TraeCLI observer commands from the local Codex shell. Do not pass Codex `sandbox_permissions` unless the active runtime explicitly supports and requires it. TraeCLI remains a read-only observer/researcher and must not write config, send requests, send MQ messages, mutate DB/Redis, deploy, restart, clean resources, or make final pass/fail judgments.
 
-Always specify the model. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If TraeCLI reports that a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for unrelated failures.
+Always specify the model with `-c model.name=<model>`. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If TraeCLI reports that a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for unrelated failures.
 
-Suggested invocation shape. Write the final response to a summary file and redirect stdout/stderr to a raw log; Codex should read the summary file first and inspect the raw log only when needed:
+Suggested invocation shape for current TraeCLI versions. Write stdout to a summary file and stderr to a raw log; Codex should read the summary file first and inspect the raw log only when needed:
 
 ```bash
-traecli exec -m <model> --sandbox danger-full-access --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
+traecli -c model.name=<model> -p --output-format text --query-timeout 5m --allowed-tool Bash '<observer prompt>' >/tmp/runtime-observer-summary.md 2>/tmp/runtime-observer-raw.log
 ```
 
-When the observer prompt includes `bytedcli`, log, metric, TCC, MQ, RDS, Redis, or other shell-based platform commands, use `--allowed-tool` as narrowly as practical. Use `Bash(bytedcli *:*)` only when necessary, and then make the prompt explicitly allow only read-only subcommands. Broader shell access is allowed only for local processing of already-collected raw logs or command output; conclusions from that processing must include the raw snippets that support them.
+Do not use the older `traecli exec`, `-m`, `--sandbox`, `--ephemeral`, or `-o` shape unless `traecli --help` proves those flags exist in the installed version.
 
-For prompts that ask TraeCLI to run `bytedcli` or another read-only platform CLI, explicitly state that the outer invocation uses `danger-full-access` only as execution capability and allowlists the read-only command. The observer must attempt the listed read-only command before reporting blocked. Blocked status requires a concrete command result such as auth required, command not found, network failure, permission denied, unsupported model, or tool-denied.
+When the observer prompt includes `bytedcli`, log, metric, TCC, MQ, RDS, Redis, or other shell-based platform commands, use `--allowed-tool` as narrowly as practical only if the installed TraeCLI accepts that syntax. If `Bash(bytedcli *:*)` or similar patterns are denied, use `--allowed-tool Bash` and constrain the prompt to read-only `bytedcli` or local processing commands. Conclusions from local processing must include the raw snippets that support them.
 
-If TraeCLI reports tool execution permission denied for a read-only platform command, retry once with a narrower `--allowed-tool` pattern before declaring the observer blocked. Do not use `--permission-mode bypass_permissions`, `-y`, or other yolo-style permission bypasses for observer work.
+For prompts that ask TraeCLI to run `bytedcli` or another read-only platform CLI, explicitly state that the outer invocation grants shell execution only so the observer can run read-only commands. The observer must attempt the listed read-only command before reporting blocked. Blocked status requires a concrete command result such as auth required, command not found, network failure, permission denied, unsupported model, or tool-denied.
+
+If TraeCLI reports tool execution permission denied for a read-only platform command, retry once with `--allowed-tool Bash` before declaring the observer blocked. Do not use `--permission-mode bypass_permissions`, `-y`, or other yolo-style permission bypasses for observer work.
 
 Every TraeCLI observer prompt must include:
 
@@ -39,7 +41,7 @@ Role:
 - You are a read-only observer and report generator.
 - Do not modify files, send HTTP/MQ requests, trigger eval/MR/Bits/callbacks, update TCC/RDS/Redis/MQ/IAM/alerts, change offsets, deploy, or restart services.
 - Do not make final pass/fail judgments. Collect evidence and state confidence only.
-- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- The outer TraeCLI invocation grants shell execution only so you can run the listed read-only commands. You remain read-only and must run only those commands, plus bounded local processing of collected raw output when needed.
 - Every finding or conclusion derived from raw logs must include representative raw snippets and identifiers.
 - Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
 - If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
@@ -104,7 +106,7 @@ Role:
 - Complete exactly one bounded snapshot and return immediately.
 - Do not run an internal loop, sleep between attempts, or keep watching after the first bounded query set.
 - Do not modify files, send HTTP/MQ requests, trigger eval/MR/Bits/callbacks, update TCC/RDS/Redis/MQ/IAM/alerts, change offsets, deploy, or restart services.
-- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- The outer TraeCLI invocation grants shell execution only so you can run the listed read-only commands. You remain read-only and must run only those commands, plus bounded local processing of collected raw output when needed.
 - Every finding or conclusion derived from raw logs must include representative raw snippets and identifiers.
 - Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
 - If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
@@ -158,7 +160,7 @@ Role:
 - Search only official/internal docs, CLI help, read-only platform state, or source code paths.
 - Do not modify files, update config/resources, send live requests, deploy, restart services, or make final design/pass-fail decisions.
 - When command references are provided and the outer invocation allowlists them, attempt those read-only commands before reporting blocked.
-- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- The outer TraeCLI invocation grants shell execution only so you can run the listed read-only commands. You remain read-only and must run only those commands, plus bounded local processing of collected raw output when needed.
 - Every finding or conclusion derived from raw logs or source snippets must include representative raw snippets and identifiers.
 - Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
 - If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.
@@ -209,7 +211,7 @@ Role:
 - The main agent will trigger the runtime case. Do not trigger requests, send messages, restart services, consume MQ/DLQ, change config, or clean resources.
 - Complete one bounded monitoring snapshot and return. Do not run internal long-polling loops; the main agent owns repeat cadence and stop decisions.
 - Observe only the assigned bounded window. Do not poll future time, sleep, or extend the window.
-- The outer TraeCLI invocation uses `danger-full-access` only as execution capability for internal network access. You remain read-only and must run only the listed read-only commands, plus bounded local processing of collected raw output when needed.
+- The outer TraeCLI invocation grants shell execution only so you can run the listed read-only commands. You remain read-only and must run only those commands, plus bounded local processing of collected raw output when needed.
 - Every finding or conclusion derived from raw logs must include representative raw snippets and identifiers.
 - Report blocked only when an actual command execution returns auth, network, permission, command, model, or tool-denied error.
 - If enough evidence exists to answer the goal, stop querying and return immediately with an evidence-backed summary.

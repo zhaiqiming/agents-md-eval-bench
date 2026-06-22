@@ -28,25 +28,27 @@ Do not ask TraeCLI to run internal long-polling loops. For long-running observat
 
 Accept TraeCLI output only when it includes evidence identifiers such as `task_no`, `task_id`, `msg_id`, `log_id`, metric name, query link, resource name/version, or source path. Conclusions produced from log or metric processing must include representative raw evidence snippets that support the conclusion. If identifiers or raw snippets are missing, ask for a narrower follow-up or treat the output as low confidence.
 
-Run every TraeCLI command from Codex locally with `sandbox_permissions="require_escalated"` and a narrow prefix such as `["traecli"]`; do not try TraeCLI inside the Codex sandbox first.
+Run TraeCLI from the local Codex shell. Do not pass Codex `sandbox_permissions` unless the active runtime explicitly supports and requires it.
 
 Before first TraeCLI delegation in a session, check availability locally without triggering a real runtime action:
 
 ```bash
 command -v traecli
 traecli --version
-traecli login status
+command -v bytedcli
+bytedcli --json auth status
+traecli -c model.name=Test-O-New-Thinking -p --output-format text 'Say exactly TRAE_OK'
 ```
 
-Always specify the TraeCLI observer model explicitly. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for other failures such as sandbox, auth, network, or tool permission errors.
+Always specify the TraeCLI observer model explicitly with `-c model.name=<model>`. Choose from this ordered list: `Test-O-New-Thinking`, `DeepSeek-V4-Pro`, `MiniMax-M2.7`, `GLM-5.1`. If a model is unavailable, unauthorized, or unsupported, retry the same observer task once with the next model and report the fallback reason. Do not switch models for other failures such as auth, network, or tool permission errors. Use `traecli models` if the configured list needs to be refreshed.
 
-Run TraeCLI observer work with `--sandbox danger-full-access` so it can use host-local sec, internal network, credentials, and runtime state. This is process capability, not write permission: TraeCLI remains a read-only observer/researcher and must not execute real requests, send MQ messages, update config or data, change offsets, deploy, restart services, edit files, clean resources, or make final pass/fail decisions. Always write the final response to a summary file and redirect stdout/stderr to a raw log so Codex reads only the summary by default:
+Run TraeCLI observer work in non-interactive print mode. The current TraeCLI command surface uses `-p/--print`; do not use the older `traecli exec`, `-m`, `--sandbox`, `--ephemeral`, or `-o` invocation shape unless `traecli --help` proves those flags exist in the installed version. TraeCLI remains a read-only observer/researcher and must not execute real requests, send MQ messages, update config or data, change offsets, deploy, restart services, edit files, clean resources, or make final pass/fail decisions. Write stdout to a summary file and stderr to a raw log so Codex reads only the summary by default:
 
 ```bash
-traecli exec -m <model> --sandbox danger-full-access --ephemeral --allowed-tool 'Bash(bytedcli *:*)' -o /tmp/runtime-observer-summary.md '<observer prompt>' >/tmp/runtime-observer-raw.log 2>&1
+traecli -c model.name=<model> -p --output-format text --query-timeout 5m --allowed-tool Bash '<observer prompt>' >/tmp/runtime-observer-summary.md 2>/tmp/runtime-observer-raw.log
 ```
 
-Prefer a task-specific read-only `--allowed-tool` pattern for platform queries. Use `--allowed-tool 'Bash(bytedcli *:*)'` only when necessary, and then make the prompt explicitly allow only read-only subcommands. Broader shell access is allowed only for local processing of already-collected raw logs or command output. Do not use `--permission-mode bypass_permissions`, `-y`, or other yolo-style permission bypasses for runtime observation.
+Prefer a task-specific read-only `--allowed-tool` pattern only if the installed TraeCLI accepts it. If `Bash(bytedcli *:*)` or similar patterns are denied by the current version, use `--allowed-tool Bash` and constrain the prompt to read-only `bytedcli` or local processing commands. Do not use `--permission-mode bypass_permissions`, `-y`, or other yolo-style permission bypasses for runtime observation.
 
 TraeCLI wait budgets are owned by the main agent:
 
